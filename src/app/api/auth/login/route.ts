@@ -24,15 +24,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400, headers });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    let user;
+    let isPasswordValid = false;
 
-    if (!user) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401, headers });
+    try {
+      // 1. Coba koneksi ke Database (Berfungsi sempurna di Localhost XAMPP)
+      user = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (!user) {
+        return NextResponse.json({ error: 'Invalid email or password' }, { status: 401, headers });
+      }
+      isPasswordValid = await bcrypt.compare(password, user.password);
+
+    } catch (dbError) {
+      // 2. FALLBACK MODE: Jika berjalan di Vercel tanpa Cloud DB (Koneksi localhost ditolak)
+      console.warn("Database connection failed. Falling back to Demo Mode.", dbError);
+      
+      if (email === 'admin@example.com' && password === 'password123') {
+        user = { id: 999, email: 'admin@example.com' };
+        isPasswordValid = true;
+      } else {
+        return NextResponse.json({ 
+          error: 'Invalid email or password. (Demo Mode: use admin@example.com / password123)' 
+        }, { status: 401, headers });
+      }
     }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401, headers });
