@@ -2,6 +2,9 @@
 
 Proyek aplikasi web yang mengimplementasikan sistem autentikasi modern dan solid, ditujukan sebagai demonstrasi keahlian pemrograman *Full-stack*. Dilengkapi dengan antarmuka yang sangat estetik bergaya desain *Glassmorphism* serta proteksi keamanan berlapis di sisi backend.
 
+🌟 **Live Demo & Preview:** Anda dapat langsung mencoba aplikasi ini secara daring (online) melalui Vercel di tautan berikut:
+**[https://login-nextjs-react.vercel.app/login](https://login-nextjs-react.vercel.app/login)**
+
 ---
 
 ## 🛠️ Tech Stack (Tumpukan Teknologi)
