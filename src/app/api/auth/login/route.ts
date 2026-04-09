@@ -27,28 +27,39 @@ export async function POST(request: Request) {
     let user;
     let isPasswordValid = false;
 
-    try {
-      // 1. Coba koneksi ke Database (Berfungsi sempurna di Localhost XAMPP)
-      user = await prisma.user.findUnique({
-        where: { email },
-      });
-
-      if (!user) {
-        return NextResponse.json({ error: 'Invalid email or password' }, { status: 401, headers });
-      }
-      isPasswordValid = await bcrypt.compare(password, user.password);
-
-    } catch (dbError) {
-      // 2. FALLBACK MODE: Jika berjalan di Vercel tanpa Cloud DB (Koneksi localhost ditolak)
-      console.warn("Database connection failed. Falling back to Demo Mode.", dbError);
-      
+    // VERY AGGRESSIVE FALLBACK: Jika Vercel tidak memiliki DATABASE_URL, JANGAN panggil prisma sama sekali!
+    if (!process.env.DATABASE_URL) {
+      console.log("No DATABASE_URL found. Using aggressive fallback.");
       if (email === 'admin@example.com' && password === 'password123') {
         user = { id: 999, email: 'admin@example.com' };
         isPasswordValid = true;
       } else {
-        return NextResponse.json({ 
-          error: 'Invalid email or password. (Demo Mode: use admin@example.com / password123)' 
-        }, { status: 401, headers });
+        return NextResponse.json({ error: 'Invalid email or password. (Demo Mode: use admin@example.com / password123)' }, { status: 401, headers });
+      }
+    } else {
+      try {
+        // 1. Coba koneksi ke Database (Berfungsi sempurna di Localhost XAMPP)
+        user = await prisma.user.findUnique({
+          where: { email },
+        });
+
+        if (!user) {
+          return NextResponse.json({ error: 'Invalid email or password' }, { status: 401, headers });
+        }
+        isPasswordValid = await bcrypt.compare(password, user.password);
+
+      } catch (dbError) {
+        // 2. FALLBACK SECONDARE: Jika ada connection error
+        console.warn("Database connection failed. Falling back to Demo Mode.", dbError);
+        
+        if (email === 'admin@example.com' && password === 'password123') {
+          user = { id: 999, email: 'admin@example.com' };
+          isPasswordValid = true;
+        } else {
+          return NextResponse.json({ 
+            error: 'Invalid email or password. (Demo Mode: use admin@example.com / password123)' 
+          }, { status: 401, headers });
+        }
       }
     }
 
